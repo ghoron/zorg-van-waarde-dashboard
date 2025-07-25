@@ -1,3 +1,21 @@
+import pandas as pd
+from pathlib import Path
+
+# Pad naar de map met data
+DATA_DIR = Path(__file__).parent / "data"
+
+# Voorbeeld: laad een CSV met verwijzingen
+verwijzingen_file = DATA_DIR / "Verwijzingen_2025-07.csv"
+
+if verwijzingen_file.exists():
+    verwijzingen_df = pd.read_csv(verwijzingen_file)
+else:
+    verwijzingen_df = pd.DataFrame()
+if not verwijzingen_df.empty:
+    st.subheader("Aantal verwijzingen per specialisme")
+    st.dataframe(verwijzingen_df.head())
+else:
+    st.info("Nog geen data geüpload voor verwijzingen.")
 
 import streamlit as st
 import plotly.graph_objects as go
