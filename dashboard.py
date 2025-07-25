@@ -15,7 +15,7 @@ if not verwijzingen_df.empty:
     st.subheader("Aantal verwijzingen per specialisme")
     st.dataframe(verwijzingen_df.head())
 else:
-    st.info("Nog geen data geüpload voor verwijzingen.")
+    st.info("Nog geen data geupload voor verwijzingen.")
 
 import streamlit as st
 import plotly.graph_objects as go
