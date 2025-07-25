@@ -11,11 +11,23 @@ st.title("Zorg van Waarde Dashboard")
 DATA_DIR = Path(__file__).parent / "data"
 
 def safe_read_csv(filename):
-    """Lees CSV-bestand als het bestaat, anders None."""
+    """
+    Probeer CSV te lezen. 
+    Eerst met komma, als dat faalt dan met puntkomma.
+    Geeft None terug als het bestand niet leesbaar is.
+    """
     file_path = DATA_DIR / filename
-    if file_path.exists():
+    if not file_path.exists():
+        return None
+    try:
         return pd.read_csv(file_path)
-    return None
+    except Exception:
+        try:
+            return pd.read_csv(file_path, sep=";")
+        except Exception:
+            st.error(f"Bestand '{filename}' kan niet gelezen worden.")
+            return None
+
 
 def klok(titel, waarde, maxwaarde=10):
     fig = go.Figure(go.Indicator(
