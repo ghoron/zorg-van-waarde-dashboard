@@ -143,3 +143,4 @@ if hvz is not None or cvrm is not None or dm2 is not None:
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("Nog geen data geupload voor chronische aandoeningen")
+
