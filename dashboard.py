@@ -64,7 +64,7 @@ else:
 st.header("📂 Data uit CSV-bestanden")
 
 # Verwijzingen
-verwijzingen = safe_read_csv("Verwijzingen 2024.csv")
+verwijzingen = safe_read_csv("Verwijzingen.csv")
 if verwijzingen is not None:
     st.subheader("Verwijzingen")
     cols_lower = [c.lower() for c in verwijzingen.columns]
