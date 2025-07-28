@@ -1,6 +1,8 @@
+
 # -*- coding: utf-8 -*-
 import streamlit as st
 import plotly.graph_objects as go
+import plotly.express as px
 import pandas as pd
 from pathlib import Path
 import datetime
@@ -11,11 +13,6 @@ st.title("Zorg van Waarde Dashboard")
 DATA_DIR = Path(__file__).parent / "data"
 
 def safe_read_csv(filename):
-    """
-    Probeer CSV te lezen. 
-    Eerst met komma, als dat faalt dan met puntkomma.
-    Geeft None terug als het bestand niet leesbaar is.
-    """
     file_path = DATA_DIR / filename
     if not file_path.exists():
         return None
@@ -27,7 +24,6 @@ def safe_read_csv(filename):
         except Exception:
             st.error(f"Bestand '{filename}' kan niet gelezen worden.")
             return None
-
 
 def klok(titel, waarde, maxwaarde=10):
     fig = go.Figure(go.Indicator(
@@ -64,56 +60,86 @@ if dag < 5:
 else:
     st.info("Vandaag is het weekend - geen poll actief.")
 
-# --- 3. CSV-data inladen ---
+# --- 3. CSV-data laden ---
 st.header("📂 Data uit CSV-bestanden")
 
 # Verwijzingen
 verwijzingen = safe_read_csv("Verwijzingen 2024.csv")
 if verwijzingen is not None:
     st.subheader("Verwijzingen")
-    st.dataframe(verwijzingen.head())
+    cols_lower = [c.lower() for c in verwijzingen.columns]
+    if "specialisme" in cols_lower:
+        colnaam = verwijzingen.columns[cols_lower.index("specialisme")]
+        counts = verwijzingen[colnaam].value_counts().reset_index()
+        counts.columns = ["Specialisme", "Aantal"]
+        fig = px.bar(counts, x="Specialisme", y="Aantal")
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.dataframe(verwijzingen.head())
 else:
     st.info("Nog geen data geupload voor verwijzingen")
 
 # Medicatie
 medicatie = safe_read_csv("Medicatie Q1-2025.csv")
 if medicatie is not None:
-    st.subheader("Medicatie")
-    st.dataframe(medicatie.head())
+    st.subheader("Medicatie – Top 10 middelen")
+    cols_lower = [c.lower() for c in medicatie.columns]
+    if "middel" in cols_lower:
+        colnaam = medicatie.columns[cols_lower.index("middel")]
+        top_middelen = (
+            medicatie.groupby(colnaam).size()
+            .reset_index(name="Aantal")
+            .sort_values("Aantal", ascending=False)
+            .head(10)
+        )
+        fig = px.bar(top_middelen, x=colnaam, y="Aantal")
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.dataframe(medicatie.head())
 else:
     st.info("Nog geen data geupload voor medicatie")
 
 # Leeftijden
 leeftijden = safe_read_csv("Leeftijden Q1-2025.csv")
 if leeftijden is not None:
-    st.subheader("Leeftijden")
-    st.dataframe(leeftijden.head())
+    st.subheader("Leeftijdsverdeling")
+    cols_lower = [c.lower() for c in leeftijden.columns]
+    if "leeftijd" in cols_lower:
+        colnaam = leeftijden.columns[cols_lower.index("leeftijd")]
+        fig = px.histogram(leeftijden, x=colnaam, nbins=10)
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.dataframe(leeftijden.head())
 else:
     st.info("Nog geen data geupload voor leeftijden")
 
 # Positieve Gezondheid
 pg = safe_read_csv("PG juni 2025.csv")
 if pg is not None:
-    st.subheader("Positieve Gezondheid")
-    st.dataframe(pg.head())
+    st.subheader("Positieve Gezondheid (gemiddelden)")
+    score_kolommen = [c for c in pg.columns if "score" in c.lower()]
+    if score_kolommen:
+        gemiddelden = pg[score_kolommen].mean().reset_index()
+        gemiddelden.columns = ["Domein", "Score"]
+        fig = px.bar(gemiddelden, x="Domein", y="Score", range_y=[0,10])
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.dataframe(pg.head())
 else:
     st.info("Nog geen data geupload voor Positieve Gezondheid")
 
-# Chronische aandoeningen (HVZ / CVRM / DM2)
+# Chronische aandoeningen
 hvz = safe_read_csv("HVZ Q2 2025.csv")
 cvrm = safe_read_csv("CVRM Q2 2025.csv")
 dm2 = safe_read_csv("Diabetes Mellitus II Q2 2025.csv")
-
 if hvz is not None or cvrm is not None or dm2 is not None:
     st.subheader("Chronische aandoeningen")
-    if hvz is not None:
-        st.write("**HVZ**")
-        st.dataframe(hvz.head())
-    if cvrm is not None:
-        st.write("**CVRM**")
-        st.dataframe(cvrm.head())
-    if dm2 is not None:
-        st.write("**Diabetes type II**")
-        st.dataframe(dm2.head())
+    data = []
+    if hvz is not None: data.append({"Aandoening": "HVZ", "Aantal": len(hvz)})
+    if cvrm is not None: data.append({"Aandoening": "CVRM", "Aantal": len(cvrm)})
+    if dm2 is not None: data.append({"Aandoening": "Diabetes II", "Aantal": len(dm2)})
+    df_chronisch = pd.DataFrame(data)
+    fig = px.bar(df_chronisch, x="Aandoening", y="Aantal")
+    st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("Nog geen data geupload voor chronische aandoeningen")
